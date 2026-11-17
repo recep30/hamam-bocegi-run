@@ -1,117 +1,28 @@
-
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Hamam Böceği Run</title>
-<style>
-*{box-sizing:border-box}
-body{margin:0;background:#161b20;color:white;font-family:Arial;overflow:hidden}
-canvas{display:block;width:100vw;height:100dvh;touch-action:none}
-#hud{position:absolute;top:15px;left:15px;font-size:20px;font-weight:bold;text-shadow:1px 2px 4px #000}
-#menu{position:absolute;inset:0;background:#000a;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:20px}
-h1{font-size:38px;color:#f7d45b}
-button{background:#e9b83d;border:0;border-radius:12px;padding:16px 32px;font-size:20px;font-weight:bold;cursor:pointer}
-</style>
-</head>
-<body>
-<canvas id="game"></canvas>
-<div id="hud">🪳 Puan: <span id="score">0</span><br>❤️ Can: <span id="hp">2</span></div>
-<div id="menu">
-<h1>🪳 HAMAM BÖCEĞİ RUN</h1>
-<p>Terliklerden ve böcek ilaçlarından kaç!</p>
-<p>← → veya ekrana kaydırarak yön değiştir.</p>
-<button id="start">OYUNA BAŞLA</button>
-</div>
-<script>
-const canvas=document.getElementById("game");
-const ctx=canvas.getContext("2d");
-const menu=document.getElementById("menu");
-let w,h,lane=1,score=0,hp=2,playing=false;
-let obstacles=[],spawn=0,last=0,invincible=0;
-let speed=340;
-
-function resize(){
- w=canvas.width=innerWidth;
- h=canvas.height=innerHeight;
-}
-addEventListener("resize",resize);
-resize();
-
-function xLane(n){return w/2+(n-1)*Math.min(w*.26,115)}
-function start(){
- lane=1;score=0;hp=2;obstacles=[];
- spawn=0;speed=340;invincible=0;
- playing=true;last=performance.now();
- menu.style.display="none";
- requestAnimationFrame(loop);
-}
-document.getElementById("start").onclick=start;
-
-function move(dir){
- if(playing)lane=Math.max(0,Math.min(2,lane+dir));
-}
-addEventListener("keydown",e=>{
- if(e.key==="ArrowLeft"||e.key==="a")move(-1);
- if(e.key==="ArrowRight"||e.key==="d")move(1);
-});
-let touchX=0;
-canvas.addEventListener("touchstart",e=>touchX=e.touches[0].clientX);
-canvas.addEventListener("touchend",e=>{
- let dx=e.changedTouches[0].clientX-touchX;
- if(Math.abs(dx)>25)move(dx>0?1:-1);
-});
-
-function loop(now){
- if(!playing)return;
- let dt=Math.min((now-last)/1000,.04);last=now;
- score+=dt*12;speed=Math.min(680,340+score*.12);
- spawn-=dt;invincible-=dt;
- if(spawn<=0){
- obstacles.push({lane:Math.floor(Math.random()*3),y:-65,type:Math.random()>.5?"🩴":"🧴"});
- spawn=Math.max(.55,1.2-score/1200);
- }
- for(const o of obstacles){
- o.y+=speed*dt;
- if(o.lane===lane&&Math.abs(o.y-(h-120))<45&&!o.hit&&invincible<=0){
- o.hit=true;hp--;invincible=1.5;
- if(hp<=0){end();return}
- }
- }
- obstacles=obstacles.filter(o=>o.y<h+80);
- draw();
- document.getElementById("score").textContent=Math.floor(score);
- document.getElementById("hp").textContent=hp;
- requestAnimationFrame(loop);
-}
-function draw(){
- ctx.fillStyle="#4a3328";ctx.fillRect(0,0,w,h);
- ctx.fillStyle="#b9a58d";
- ctx.fillRect(w/2-Math.min(w*.4,180),0,Math.min(w*.8,360),h);
- ctx.strokeStyle="#f2e5d3";ctx.setLineDash([25,25]);
- ctx.lineWidth=4;
- for(let i=0;i<2;i++){
- let x=(xLane(i)+xLane(i+1))/2;
- ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();
- }
- ctx.setLineDash([]);
- ctx.textAlign="center";ctx.textBaseline="middle";
- ctx.font="48px Arial";
- for(const o of obstacles)ctx.fillText(o.type,xLane(o.lane),o.y);
- if(invincible<=0||Math.floor(invincible*8)%2===0){
- ctx.font="58px Arial";ctx.fillText("🪳",xLane(lane),h-120);
- }
- ctx.font="45px Arial";ctx.fillText("👩",xLane(lane),h-30);
-}
-function end(){
- playing=false;
- menu.style.display="flex";
- menu.querySelector("h1").textContent="DOKTOR YOK MU DOKTOR! 😱";
- menu.querySelector("p").textContent="Puanın: "+Math.floor(score);
- document.getElementById("start").textContent="TEKRAR OYNA";
-}
-draw();
-</script>
-</body>
-</html>
+<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Hamam Böceği Run 3D</title><style>body{margin:0;overflow:hidden;background:#171717;color:white;font-family:Arial}#ui{position:fixed;top:15px;left:15px;font-weight:bold;font-size:22px}#overlay{position:fixed;inset:0;background:#0009;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}button{padding:15px 30px;font-size:22px;border:0;border-radius:12px;background:#e9b83d}</style></head><body><div id="ui">🪳 Puan: <span id="score">0</span></div><div id="overlay"><h1>HAMAM BÖCEĞİ RUN 3D</h1><p>← → tuşları veya sağa sola kaydırarak kaç!</p><button id="start">OYUNA BAŞLA</button></div><script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js';
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x82736b);scene.fog=new THREE.Fog(0x82736b,18,65);
+const camera=new THREE.PerspectiveCamera(65,innerWidth/innerHeight,.1,100);camera.position.set(0,5,10);camera.lookAt(0,0,-12);
+const renderer=new THREE.WebGLRenderer({antialias:true});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,2));document.body.appendChild(renderer.domElement);
+scene.add(new THREE.HemisphereLight(0xffffff,0x59412f,2));const light=new THREE.DirectionalLight(0xffffff,2);light.position.set(-4,9,5);scene.add(light);
+const mat=c=>new THREE.MeshStandardMaterial({color:c,roughness:.8});
+function box(w,h,d,x,y,z,m){const a=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);a.position.set(x,y,z);scene.add(a);return a}
+const floor=mat(0xbfa68a),wall=mat(0xe7d5b9);box(9,.2,100,0,-.2,-25,floor);box(.25,6,100,-4.5,3,-25,wall);box(.25,6,100,4.5,3,-25,wall);
+for(let z=4;z>-65;z-=6){box(9,.035,.09,0,-.075,z,mat(0x8b735d));}
+const bug=new THREE.Group();scene.add(bug);bug.position.set(0,.45,4);
+const shell=new THREE.Mesh(new THREE.SphereGeometry(.56,16,12),mat(0x53251b));shell.scale.set(.8,.42,1.3);bug.add(shell);
+const head=new THREE.Mesh(new THREE.SphereGeometry(.28,12,10),mat(0x28140f));head.position.z=-.68;bug.add(head);
+for(let i=0;i<6;i++){let leg=new THREE.Mesh(new THREE.CylinderGeometry(.035,.035,.65,6),mat(0x2b160e));leg.rotation.z=(i%2?1:-1)*.85;leg.position.set(i%2?.5:-.5,-.2,(Math.floor(i/2)-1)*.4);bug.add(leg)}
+let lane=1,playing=false,score=0,objects=[],spawn=0,prev=0,hit=0;
+const lanes=[-2.5,0,2.5];const overlay=document.getElementById('overlay');
+function start(){objects.forEach(o=>scene.remove(o.mesh));objects=[];lane=1;score=0;hit=0;spawn=0;playing=true;overlay.style.display='none';prev=performance.now();requestAnimationFrame(loop)}
+document.getElementById('start').onclick=start;
+function move(n){if(playing)lane=Math.max(0,Math.min(2,lane+n))}
+addEventListener('keydown',e=>{if(e.key==='ArrowLeft'||e.key==='a')move(-1);if(e.key==='ArrowRight'||e.key==='d')move(1)});
+let tx=0;addEventListener('touchstart',e=>tx=e.touches[0].clientX);addEventListener('touchend',e=>{let d=e.changedTouches[0].clientX-tx;if(Math.abs(d)>30)move(d>0?1:-1)});
+function loop(t){if(!playing)return;let dt=Math.min((t-prev)/1000,.04);prev=t;score+=dt*10;spawn-=dt;
+if(spawn<=0){let l=Math.floor(Math.random()*3);let mesh=box(.9,.8,.9,lanes[l],.4,-48,mat(Math.random()<.5?0xd74228:0x4b6e84));objects.push({mesh,l});spawn=Math.max(.55,1.4-score/900)}
+bug.position.x+=(lanes[lane]-bug.position.x)*Math.min(1,dt*12);bug.rotation.z=Math.sin(t*.015)*.06;
+for(const o of objects){o.mesh.position.z+=dt*(16+score/70);if(Math.abs(o.mesh.position.z-4)<.7&&o.l===lane&&!o.hit){o.hit=true;hit++;if(hit===1){bug.rotation.x=.3;setTimeout(()=>bug.rotation.x=0,250)}else{playing=false;overlay.style.display='flex';overlay.querySelector('h1').textContent='DOKTOR YOK MU DOKTOR!';overlay.querySelector('p').textContent='Puan: '+Math.floor(score);document.getElementById('start').textContent='TEKRAR OYNA'}}}
+objects=objects.filter(o=>{if(o.mesh.position.z>12){scene.remove(o.mesh);return false}return true});document.getElementById('score').textContent=Math.floor(score);renderer.render(scene,camera);if(playing)requestAnimationFrame(loop)}
+renderer.render(scene,camera);addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
+</script></body></html>
