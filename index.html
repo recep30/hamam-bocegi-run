@@ -1,0 +1,117 @@
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hamam Böceği Run</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#161b20;color:white;font-family:Arial;overflow:hidden}
+canvas{display:block;width:100vw;height:100dvh;touch-action:none}
+#hud{position:absolute;top:15px;left:15px;font-size:20px;font-weight:bold;text-shadow:1px 2px 4px #000}
+#menu{position:absolute;inset:0;background:#000a;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;padding:20px}
+h1{font-size:38px;color:#f7d45b}
+button{background:#e9b83d;border:0;border-radius:12px;padding:16px 32px;font-size:20px;font-weight:bold;cursor:pointer}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="hud">🪳 Puan: <span id="score">0</span><br>❤️ Can: <span id="hp">2</span></div>
+<div id="menu">
+<h1>🪳 HAMAM BÖCEĞİ RUN</h1>
+<p>Terliklerden ve böcek ilaçlarından kaç!</p>
+<p>← → veya ekrana kaydırarak yön değiştir.</p>
+<button id="start">OYUNA BAŞLA</button>
+</div>
+<script>
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
+const menu=document.getElementById("menu");
+let w,h,lane=1,score=0,hp=2,playing=false;
+let obstacles=[],spawn=0,last=0,invincible=0;
+let speed=340;
+
+function resize(){
+ w=canvas.width=innerWidth;
+ h=canvas.height=innerHeight;
+}
+addEventListener("resize",resize);
+resize();
+
+function xLane(n){return w/2+(n-1)*Math.min(w*.26,115)}
+function start(){
+ lane=1;score=0;hp=2;obstacles=[];
+ spawn=0;speed=340;invincible=0;
+ playing=true;last=performance.now();
+ menu.style.display="none";
+ requestAnimationFrame(loop);
+}
+document.getElementById("start").onclick=start;
+
+function move(dir){
+ if(playing)lane=Math.max(0,Math.min(2,lane+dir));
+}
+addEventListener("keydown",e=>{
+ if(e.key==="ArrowLeft"||e.key==="a")move(-1);
+ if(e.key==="ArrowRight"||e.key==="d")move(1);
+});
+let touchX=0;
+canvas.addEventListener("touchstart",e=>touchX=e.touches[0].clientX);
+canvas.addEventListener("touchend",e=>{
+ let dx=e.changedTouches[0].clientX-touchX;
+ if(Math.abs(dx)>25)move(dx>0?1:-1);
+});
+
+function loop(now){
+ if(!playing)return;
+ let dt=Math.min((now-last)/1000,.04);last=now;
+ score+=dt*12;speed=Math.min(680,340+score*.12);
+ spawn-=dt;invincible-=dt;
+ if(spawn<=0){
+ obstacles.push({lane:Math.floor(Math.random()*3),y:-65,type:Math.random()>.5?"🩴":"🧴"});
+ spawn=Math.max(.55,1.2-score/1200);
+ }
+ for(const o of obstacles){
+ o.y+=speed*dt;
+ if(o.lane===lane&&Math.abs(o.y-(h-120))<45&&!o.hit&&invincible<=0){
+ o.hit=true;hp--;invincible=1.5;
+ if(hp<=0){end();return}
+ }
+ }
+ obstacles=obstacles.filter(o=>o.y<h+80);
+ draw();
+ document.getElementById("score").textContent=Math.floor(score);
+ document.getElementById("hp").textContent=hp;
+ requestAnimationFrame(loop);
+}
+function draw(){
+ ctx.fillStyle="#4a3328";ctx.fillRect(0,0,w,h);
+ ctx.fillStyle="#b9a58d";
+ ctx.fillRect(w/2-Math.min(w*.4,180),0,Math.min(w*.8,360),h);
+ ctx.strokeStyle="#f2e5d3";ctx.setLineDash([25,25]);
+ ctx.lineWidth=4;
+ for(let i=0;i<2;i++){
+ let x=(xLane(i)+xLane(i+1))/2;
+ ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();
+ }
+ ctx.setLineDash([]);
+ ctx.textAlign="center";ctx.textBaseline="middle";
+ ctx.font="48px Arial";
+ for(const o of obstacles)ctx.fillText(o.type,xLane(o.lane),o.y);
+ if(invincible<=0||Math.floor(invincible*8)%2===0){
+ ctx.font="58px Arial";ctx.fillText("🪳",xLane(lane),h-120);
+ }
+ ctx.font="45px Arial";ctx.fillText("👩",xLane(lane),h-30);
+}
+function end(){
+ playing=false;
+ menu.style.display="flex";
+ menu.querySelector("h1").textContent="DOKTOR YOK MU DOKTOR! 😱";
+ menu.querySelector("p").textContent="Puanın: "+Math.floor(score);
+ document.getElementById("start").textContent="TEKRAR OYNA";
+}
+draw();
+</script>
+</body>
+</html>
